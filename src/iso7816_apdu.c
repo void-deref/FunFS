@@ -67,11 +67,12 @@ apdu_process(Apdu *apdu)
     return sw;
 }
 
-void apdu_receive_cdata(Apdu *apdu)
+int16_t apdu_receive_cdata(Apdu *apdu)
 {
     memset(apdu->buffer, 0x00, APDU_BUFFER_LEN);
-    udp_receive_cdata(apdu->buffer);
+    int len = udp_receive_cdata(apdu->buffer);
     apdu->resp_len = 0;
+    return len;
 }
 
 void apdu_send_rdata(uint8_t *rdata, uint16_t len, ISO_SW sw)

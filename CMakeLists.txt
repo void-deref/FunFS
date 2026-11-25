@@ -59,9 +59,9 @@ target_link_libraries(${FUNFS_EXEC}
 )
 
 # linking Winsock2 (Windows-specific)
-if(WIN32)
-    target_link_libraries(${FUNFS_EXEC} PRIVATE ws2_32)
-endif()
+# if(WIN32)
+#     target_link_libraries(${FUNFS_EXEC} PRIVATE ws2_32)
+# endif()
 
 target_include_directories(${FUNFS_EXEC}
 	PUBLIC ${PROJECT_SOURCE_DIR}/src

@@ -34,7 +34,7 @@ typedef struct {
 } Apdu;
 
 ISO_SW apdu_process(Apdu* apdu);
-void apdu_receive_cdata(Apdu* apdu);
+int16_t apdu_receive_cdata(Apdu* apdu);
 void apdu_send_rdata(uint8_t* rdata, uint16_t len, ISO_SW sw);
 
 #endif /* FUNFS_ISO7816_APDU_H */

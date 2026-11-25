@@ -1,4 +1,4 @@
-from tests_common import *
+from tests.udp_client import *
 
 def main():
 

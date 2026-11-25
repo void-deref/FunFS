@@ -8,3 +8,7 @@ target_include_directories(${FUNFS_PLATFORM}
 	PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/simulator
 	PUBLIC ${PROJECT_SOURCE_DIR}/src
 )
+
+if(WIN32)
+    target_link_libraries(${FUNFS_PLATFORM} PUBLIC ws2_32)
+endif()

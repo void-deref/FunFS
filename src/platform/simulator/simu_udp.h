@@ -2,23 +2,21 @@
 #define FUNFS_SIMU_UDP_H
 
 #if defined(_WIN32)
-#ifndef _WIN32_WININT
-#define _WIN32_WININT 0x0600
-#endif /* _WIN32_WININT */
-#ifndef MSG_CONFIRM
-#define MSG_CONFIRM 0
-#endif
-#include <winsock2.h>
-#include <ws2tcpip.h>
-// #   pragma comment(lib, "ws2_32.lib")
+    #ifndef _WIN32_WININT
+        #define _WIN32_WININT 0x0600
+        #define MSG_CONFIRM 0
+    #endif /* _WIN32_WININT */
+    #include <winsock2.h>
+    #include <ws2tcpip.h>
 #else
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <unistd.h>
-#include <errno.h>
+    #include <sys/types.h>
+    #include <sys/socket.h>
+    #include <netinet/in.h>
+    #include <arpa/inet.h>
+    #include <netdb.h>
+    #include <unistd.h>
+    #include <errno.h>
+    #define INVALID_SOCKET (-1)
 #endif /* _WIN32 */
 
 #if defined(_WIN32)
@@ -37,9 +35,10 @@
 #include <stdint.h>
 
 uint16_t udp_server_init(void);
+void udp_server_abort(void);
 void udp_server_close(void);
 
-void udp_receive_cdata(uint8_t *cdata);
+int16_t udp_receive_cdata(uint8_t *cdata);
 void udp_send_cdata(uint8_t *rdata, uint16_t len);
 
 #endif /* FUNFS_SIMU_UDP_H */

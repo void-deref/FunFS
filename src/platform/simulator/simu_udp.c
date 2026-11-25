@@ -9,17 +9,29 @@
 static struct sockaddr_in server_addr = {0};
 static struct sockaddr_in client_addr = {0};
 
-static int udp_socket = 0;
+static SOCKET udp_socket = INVALID_SOCKET;
 static int udp_port = 8485;
 
 static socklen_t socket_len = sizeof(client_addr);
+static volatile sig_atomic_t is_aborted = 0;
 
 uint16_t
 udp_server_init(void)
 {
-    if ((udp_socket = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+    is_aborted = 0;
+#if defined(_WIN32)
+    WSADATA wsaData;
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
     {
-        printf("Failed to retrieve a UDP socket descriptor.\n");
+        printf("WSAStartup failed with error: %d\n", GET_SOCKET_ERRNO());
+        exit(1);
+    }
+#endif /* _WIN32 */
+
+    udp_socket = socket(AF_INET, SOCK_DGRAM, 0);
+    if (!IS_VALID_SOCKET(udp_socket))
+    {
+        printf("Failed to retrieve a UDP socket descriptor. Error: %d\n", GET_SOCKET_ERRNO());
         exit(1);
     }
 
@@ -33,40 +45,65 @@ udp_server_init(void)
     if (bind(udp_socket, (const struct sockaddr *)&server_addr, sizeof(struct sockaddr_in)) < 0)
     {
         printf("Failed to assign the server address to the upd socket.\n");
-        CLOSE_SOCKET(udp_socket);
+        udp_server_close();
         exit(1);
     }
 
-    return 0;
+    return (uint16_t)udp_port;
 }
 
-void udp_server_close(void)
+void
+udp_server_abort(void)
 {
-    CLOSE_SOCKET(udp_socket);
+    is_aborted = 1;
+    if (IS_VALID_SOCKET(udp_socket))
+    {
+        CLOSE_SOCKET(udp_socket);
+        udp_socket = INVALID_SOCKET;
+    }
 }
 
-void udp_receive_cdata(uint8_t *cdata)
+void
+udp_server_close(void)
 {
-    ssize_t bytes_read = recvfrom(
+    udp_server_abort();
+#if defined(_WIN32)
+    WSACleanup();
+#endif
+}
+
+int16_t udp_receive_cdata(uint8_t *cdata)
+{
+    socket_len = sizeof(client_addr);
+
+    int16_t bytes_read = recvfrom(
         udp_socket,
         (char *)cdata,
         APDU_BUFFER_LEN,
-        MSG_WAITALL,
+        0, // MSG_WAITALL,
         (struct sockaddr *)&client_addr,
         &socket_len);
 
-    if (bytes_read < 0)
-    {
-        DBG_PRINT_VARG("%s\n", "ERROR: UDP failed to retrieve a data from the client")
+    if (bytes_read < 0) {
+        if (is_aborted) {
+            return -1;
+        }
+        DBG_PRINT_VARG("\nUDP failed to retrieve a data from the client with the following reason: %d", GET_SOCKET_ERRNO())
         raise(SIGINT);
+        return -1;
     }
 
     DBG_PRINT_VARG("%s", "<< ")
     DBG_PRINT_HEX(cdata, bytes_read)
+    return bytes_read;
 }
 
 void udp_send_cdata(uint8_t *rdata, uint16_t len)
 {
+    if (is_aborted || !IS_VALID_SOCKET(udp_socket)) {
+        return;
+    }
+
     sendto(
         udp_socket,
         (const char *)rdata,
