@@ -5,6 +5,7 @@
             "includePath": [
 				"${workspaceFolder}/src",
 				"${workspaceFolder}/src/platform",
+                "${workspaceFolder}/src/platform/simulator",
 				"/usr/include"
             ],
             "defines": [

@@ -7,38 +7,38 @@
 #include "flash_emu.h"
 #include <stdint.h>
 
-void dbg_print_inode(INode* node);
-void dbg_print_va(ValidityArea* va);
-void dbg_print_super_block(ValidityArea* va);
-void dbg_print_hex(uint8_t* data, uint32_t len);
-char* dbg_sw_to_string(ISO_SW sw);
+void dbg_print_inode(INode *node);
+void dbg_print_va(ValidityArea *va);
+void dbg_print_super_block(ValidityArea *va);
+void dbg_print_hex(uint8_t *data, uint32_t len);
+char *dbg_sw_to_string(ISO_SW sw);
 
-#if defined (FUNFS_DBG_MODE)
+#if defined(FUNFS_DBG_MODE)
 #define DBG_PRINT_VARG(format, ...) \
-	printf(format, __VA_ARGS__);
+    printf(format, __VA_ARGS__);
 
-#define DBG_PRINT_INODE(inode)      \
-	dbg_print_inode(inode);
+#define DBG_PRINT_INODE(inode) \
+    dbg_print_inode(inode);
 
-#define DBG_PRINT_VA(va)            \
-	dbg_print_va(va);
+#define DBG_PRINT_VA(va) \
+    dbg_print_va(va);
 
 #define DBG_PRINT_SUPERBLOCK(super) \
-	dbg_print_super_block(super);
+    dbg_print_super_block(super);
 
 #define DBG_PRINT_VALUE(value, len) \
-	dbg_print_value(value, len);
+    dbg_print_value(value, len);
 
 #define DBG_PRINT_HEX(array, length) \
-	dbg_print_hex(array, length);
+    dbg_print_hex(array, length);
 
 #define DBG_SW_TO_STRING(sw) \
-	dbg_sw_to_string(sw)
+    dbg_sw_to_string(sw)
 
 #define DBG_GET_AVAIL_MEMORY() \
-	mm_get_available_memory()            // Notice the absence of semicolon
+    mm_get_available_memory() // Notice the absence of semicolon
 
-# else
+#else
 #define DBG_PRINT_VARG(format, ...)
 #define DBG_PRINT_INODE(inode)
 #define DBG_PRINT_VA(va)
