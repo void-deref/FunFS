@@ -7,7 +7,7 @@ static const char *FLASH_BINARY = "FunFS.bin";
 static FILE *aFile = NULL;
 
 static uint16_t page_ram[PAGE_SIZE / 2];
-static uint16_t flash_emu[FLASH_SIZE_TOTAL / 2];
+static uint16_t flash_emu[FLASH_SIZE_TOTAL / 2] __attribute__((aligned(PAGE_SIZE)));
 
 /**Page-aligned first address.
  * This solution resembles a real hardware: usually we use a first available page after
@@ -37,6 +37,9 @@ mm_get_available_memory(void)
     return available_memory;
 }
 
+/**
+ * 
+ */
 uint32_t
 mm_get_start_address(void)
 {
@@ -75,10 +78,8 @@ mm_allocate(uint16_t size)
     block_t *current = (block_t *)fs_start_addr;
     block_t *previous = (block_t *)fs_start_addr;
     uint32_t address = 0;
-    do
-    {
-        if (current->len == 0xFFFFFFFF)
-        { // the block is empty
+    do {
+        if (current->len == 0xFFFFFFFF) { // the block is empty
 
             uint32_t offset = (uint32_t)&current->len;
             uint16_t value = size;
@@ -98,17 +99,14 @@ mm_allocate(uint16_t size)
             address = (uint32_t)current + sizeof(block_t);
 
             break;
-        }
-        else
-        { // look for an another block
+        } else { // look for an another block
             previous = current;
             // shift to the next block
             current = (block_t *)((uint8_t *)current + current->len + sizeof(block_t));
             current = (block_t *)HEX_CEIL((uint32_t)current);
 
             // check if the current address doesn't exceed flash boundary
-            if ((uint32_t)current + size >= fs_upper_addr)
-            {
+            if ((uint32_t)current + size >= fs_upper_addr) {
                 break;
             }
         }
@@ -123,8 +121,7 @@ mm_write(uint32_t offset, uint16_t half_word)
     uint32_t temp = offset;
     uint16_t *ptr = (uint16_t *)fs_start_addr;
 
-    if (offset & 0x00000001)
-    {
+    if (offset & 0x00000001) {
         printf("\n\t\t\t****HardFault****\n"
                "Attempt to write at address '%08X' which isn't half-word aligned\n\n",
                offset);
@@ -132,16 +129,14 @@ mm_write(uint32_t offset, uint16_t half_word)
         raise(SIGINT);
     }
 
-    if (offset > fs_upper_addr)
-    {
+    if (offset > fs_upper_addr) {
         return mm_writeErr;
     }
 
     // address to index conversion
     offset = (offset - fs_start_addr) / 2;
 
-    if (ptr[offset] != 0xFFFF)
-    {
+    if (ptr[offset] != 0xFFFF) {
         printf("\n\t\t\t****HardFault****\n"
                "Attempt to write at address '%08X' (first_page[%d])\nwhich isn't blank and contains '%04X' value\n\n",
                temp, offset, ptr[offset]);
@@ -160,8 +155,7 @@ mm_read(uint32_t offset, uint8_t *byte)
     uint8_t *ptr = (uint8_t *)fs_start_addr;
     *byte = 0;
 
-    if (offset > fs_upper_addr)
-    {
+    if (offset > fs_upper_addr) {
         return mm_readErr;
     }
 
@@ -178,16 +172,14 @@ clear_page(uint32_t address)
 {
     uint16_t *ptr = (uint16_t *)fs_start_addr;
 
-    if (address > fs_upper_addr)
-    {
+    if (address > fs_upper_addr) {
         return mm_writeErr;
     }
 
     // address to index conversion
     address = (address - fs_start_addr) / 2;
 
-    for (uint16_t i = 0; i < PAGE_SIZE / 2; ++i)
-    {
+    for (uint16_t i = 0; i < PAGE_SIZE / 2; ++i) {
         ptr[address + i] = 0xFFFF;
     }
 
@@ -210,41 +202,33 @@ rewrite_next_page(const uint32_t page_addr, const uint32_t data_addr, uint8_t *d
 
     memset((uint8_t *)page_ram, 0xFF, PAGE_SIZE);
 
-    do
-    {
+    do {
         // 1. copy all data from flash to ram
-        for (uint32_t i = 0; i < PAGE_SIZE; ++i)
-        {
-            if ((result = mm_read(page_addr + i, &byte)) != mm_Ok)
-            {
+        for (uint32_t i = 0; i < PAGE_SIZE; ++i) {
+            if ((result = mm_read(page_addr + i, &byte)) != mm_Ok) {
                 break;
             }
 
             page_u8[i] = byte;
         }
 
-        if (result != mm_Ok)
-        {
+        if (result != mm_Ok) {
             break;
         }
 
         // 2. update fields in RAM
-        for (uint32_t src = 0, dst = (data_addr - page_addr); src < len; src++, dst++)
-        {
+        for (uint32_t src = 0, dst = (data_addr - page_addr); src < len; src++, dst++) {
             page_u8[dst] = data[src];
         }
 
         // 3. clear page
-        if ((result = clear_page(page_addr)) != mm_Ok)
-        {
+        if ((result = clear_page(page_addr)) != mm_Ok) {
             break;
         }
 
         // 4. update entire page
-        for (uint32_t src = 0, dst = 0; dst < PAGE_SIZE; ++src, dst += 2)
-        {
-            if ((result = mm_write(page_addr + dst, page_ram[src])) != mm_Ok)
-            {
+        for (uint32_t src = 0, dst = 0; dst < PAGE_SIZE; ++src, dst += 2) {
+            if ((result = mm_write(page_addr + dst, page_ram[src])) != mm_Ok) {
                 break;
             }
         }
@@ -265,11 +249,9 @@ mm_rewrite_page(uint32_t start_page, uint32_t data_start_addr, uint8_t *data, ui
     uint8_t *data_ptr = data;
     uint32_t portion = 0;
 
-    do
-    {
+    do {
         portion = PAGE_CEIL(start_page + 1) - data_start_addr;
-        if (len < portion)
-        { // remaining bytes are less than page size
+        if (len < portion) { // remaining bytes are less than page size
             portion = len;
         }
 
@@ -293,18 +275,15 @@ mm_open_image(void)
     // size_t bytesRead = 0;
     mm_Result result = mm_Ok;
 
-    do
-    {
-        if (aFile != NULL)
-        { // the 'FunFS.bin' is already openned. Bail out.
+    do {
+        if (aFile != NULL) { // the 'FunFS.bin' is already openned. Bail out.
             break;
         }
 
         memset((uint8_t *)flash_emu, 0xFF, FLASH_SIZE_TOTAL);
         aFile = fopen(FLASH_BINARY, "w");
 
-        if (aFile == NULL)
-        {
+        if (aFile == NULL) {
             result = mm_fopenErr;
             break;
         }
@@ -319,18 +298,15 @@ mm_save_image(void)
 {
     mm_Result result = mm_Ok;
 
-    do
-    {
-        if (aFile == NULL)
-        {
+    do {
+        if (aFile == NULL) {
             break;
         }
 
         rewind(aFile);
 
         size_t written = fwrite(flash_emu, 2, FLASH_SIZE_TOTAL / 2, aFile);
-        if (written < FLASH_SIZE_TOTAL / 2)
-        {
+        if (written < FLASH_SIZE_TOTAL / 2) {
             fprintf(stderr, "ERROR: couldn't update %s binary file.\n", FLASH_BINARY);
             fclose(aFile);
             result = mm_writeErr;

@@ -28,20 +28,17 @@ main(int argc, char *argv[])
     ISO_SW sw = SW_UNKNOWN;
     Apdu apdu;
 
-    if (signal(SIGINT, interrupt_handler) == SIG_ERR)
-    {
+    if (signal(SIGINT, interrupt_handler) == SIG_ERR) {
         DBG_PRINT_VARG("%s", "ERROR: can't catch SIGINT\n");
     }
     udp_server_init();
 
-    if ((sw = iso_initialize()) != SW_OK)
-    {
+    if ((sw = iso_initialize()) != SW_OK) {
         DBG_PRINT_VARG("ERROR: 'iso_initialize()' function failed with SW %04X (%s)\n", sw, DBG_SW_TO_STRING(sw));
         raise(SIGINT);
     }
 
-    while (keep_running)
-    {
+    while (keep_running) {
         // accept next incoming APDU
         int len = apdu_receive_cdata(&apdu);
         if (len <= 0 || !keep_running) {

@@ -21,16 +21,14 @@ udp_server_init(void)
     is_aborted = 0;
 #if defined(_WIN32)
     WSADATA wsaData;
-    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
-    {
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
         printf("WSAStartup failed with error: %d\n", GET_SOCKET_ERRNO());
         exit(1);
     }
 #endif /* _WIN32 */
 
     udp_socket = socket(AF_INET, SOCK_DGRAM, 0);
-    if (!IS_VALID_SOCKET(udp_socket))
-    {
+    if (!IS_VALID_SOCKET(udp_socket)) {
         printf("Failed to retrieve a UDP socket descriptor. Error: %d\n", GET_SOCKET_ERRNO());
         exit(1);
     }
@@ -38,12 +36,11 @@ udp_server_init(void)
     memset((uint8_t *)&server_addr, 0x00, sizeof(struct sockaddr_in));
     memset((uint8_t *)&client_addr, 0x00, sizeof(struct sockaddr_in));
 
-    server_addr.sin_family = AF_INET;
+    server_addr.sin_family      = AF_INET;
     server_addr.sin_addr.s_addr = INADDR_ANY;
-    server_addr.sin_port = htons(udp_port);
+    server_addr.sin_port        = htons(udp_port);
 
-    if (bind(udp_socket, (const struct sockaddr *)&server_addr, sizeof(struct sockaddr_in)) < 0)
-    {
+    if (bind(udp_socket, (const struct sockaddr *)&server_addr, sizeof(struct sockaddr_in)) < 0) {
         printf("Failed to assign the server address to the upd socket.\n");
         udp_server_close();
         exit(1);
@@ -56,8 +53,7 @@ void
 udp_server_abort(void)
 {
     is_aborted = 1;
-    if (IS_VALID_SOCKET(udp_socket))
-    {
+    if (IS_VALID_SOCKET(udp_socket)) {
         CLOSE_SOCKET(udp_socket);
         udp_socket = INVALID_SOCKET;
     }
@@ -72,7 +68,8 @@ udp_server_close(void)
 #endif
 }
 
-int16_t udp_receive_cdata(uint8_t *cdata)
+int16_t
+udp_receive_cdata(uint8_t *cdata)
 {
     socket_len = sizeof(client_addr);
 
@@ -98,7 +95,8 @@ int16_t udp_receive_cdata(uint8_t *cdata)
     return bytes_read;
 }
 
-void udp_send_cdata(uint8_t *rdata, uint16_t len)
+void
+udp_send_cdata(uint8_t *rdata, uint16_t len)
 {
     if (is_aborted || !IS_VALID_SOCKET(udp_socket)) {
         return;
